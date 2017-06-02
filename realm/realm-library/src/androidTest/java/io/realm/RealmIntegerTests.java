@@ -109,7 +109,6 @@ public class RealmIntegerTests {
     /**
      * Same test as above, but a managed object
      */
-    @Ignore("Not yet implemented")
     @Test
     public void getters_managed() {
         realm.beginTransaction();
@@ -127,7 +126,10 @@ public class RealmIntegerTests {
         assertEquals(6.1488959259517348E18, ri.doubleValue());
 
         // negative
+        realm.beginTransaction();
         ri.set(0x8888444483338281L);
+        realm.commitTransaction();
+
         assertEquals(0x8888444483338281L, ri.longValue());
         assertEquals(0x083338281, ri.intValue());
         assertEquals((short) 0xf8281, ri.shortValue());
@@ -156,14 +158,13 @@ public class RealmIntegerTests {
     /**
      * Be absolutely certain that we can actually compare two longs.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void compareTo_managed() {
         realm.beginTransaction();
         RealmInteger ri1 = realm.createObject(Counters.class).getColumnRealmInteger();
         ri1.set(0);
         RealmInteger ri2 = realm.createObject(Counters.class).getColumnRealmInteger();
-        ri1.set(Long.MAX_VALUE);
+        ri2.set(Long.MAX_VALUE);
         realm.commitTransaction();
         assertEquals(-1, ri1.compareTo(ri2));
 
@@ -217,7 +218,6 @@ public class RealmIntegerTests {
     /**
      * Be absolutely certain that this overflows like a long, part III.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void incrementUnderFlowAndOverflow_managed() {
         realm.beginTransaction();
@@ -241,11 +241,11 @@ public class RealmIntegerTests {
     /**
      * Be absolutely certain that this overflows like a long, part IV.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void decrementUnderFlowAndOverflow_managed() {
         realm.beginTransaction();
         RealmInteger ri = realm.createObject(Counters.class).getColumnRealmInteger();
+        ri.set(Long.MIN_VALUE);
 
         ri.decrement(1);
         assertEquals(Long.MAX_VALUE, ri.longValue());
@@ -264,7 +264,6 @@ public class RealmIntegerTests {
     /**
      * Assure that an attempt to change the value of a managed RealmInteger, outside a transaction, fails.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void updateOutsideTransactionThrows() {
         realm.beginTransaction();
@@ -276,21 +275,21 @@ public class RealmIntegerTests {
             managedRI.set(1);
             fail("Setting a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("must be in a transaction"));
+            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
         }
 
         try {
             managedRI.increment(1);
             fail("Incrementing a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("must be in a transaction"));
+            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
         }
 
         try {
             managedRI.decrement(1);
             fail("Decrementing a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("must be in a transaction"));
+            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
         }
     }
 
@@ -394,7 +393,6 @@ public class RealmIntegerTests {
      * Test the semantic definition.
      * @see <a href="https://github.com/realm/realm-java/issues/4266"/>
      */
-    @Ignore("Not yet implemented")
     @Test
     @SuppressWarnings("ReferenceEquality")
     public void mixedManagedUnmanagedRealmIntegers_semantics() {
@@ -409,7 +407,7 @@ public class RealmIntegerTests {
             obj1.columnRealmInteger.increment(1);
             fail("Incrementing a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("must be in a transaction"));
+            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
         }
 
         realm.beginTransaction();
@@ -434,7 +432,7 @@ public class RealmIntegerTests {
             obj1.columnRealmInteger.set(obj2.columnRealmInteger.longValue());
             fail("Setting a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("must be in a transaction"));
+            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
         }
 
         realm.beginTransaction();
@@ -450,14 +448,13 @@ public class RealmIntegerTests {
      * Test the semantic definition.
      * @see <a href="https://github.com/realm/realm-java/issues/4266"/>
      */
-    @Ignore("Not yet implemented")
     @Test
     @SuppressWarnings("ReferenceEquality")
     public void managedRealmIntegers_semantics() {
         realm.beginTransaction();
         Counters obj1 = realm.createObject(Counters.class);
         Counters obj2 = realm.createObject(Counters.class);
-        obj1.columnRealmInteger.increment(1);
+        obj2.columnRealmInteger.increment(1);
         realm.commitTransaction();
 
         try {

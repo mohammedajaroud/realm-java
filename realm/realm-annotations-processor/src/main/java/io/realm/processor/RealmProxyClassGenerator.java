@@ -223,6 +223,9 @@ public class RealmProxyClassGenerator {
                 .emitField("ProxyState<" + qualifiedClassName + ">", "proxyState", EnumSet.of(Modifier.PRIVATE));
 
         for (VariableElement variableElement : metadata.getFields()) {
+            if (Utils.isRealmInteger(variableElement)) {
+                writer.emitField("RealmInteger", variableElement.getSimpleName().toString() + "RealmInteger", EnumSet.of(Modifier.PRIVATE));
+            }
             if (Utils.isRealmList(variableElement)) {
                 String genericType = Utils.getGenericTypeQualifiedName(variableElement);
                 writer.emitField("RealmList<" + genericType + ">", variableElement.getSimpleName().toString() + "RealmList", EnumSet.of(Modifier.PRIVATE));
@@ -267,7 +270,7 @@ public class RealmProxyClassGenerator {
             if (Constants.JAVA_TO_REALM_TYPES.containsKey(fieldTypeCanonicalName)) {
                 emitPrimitiveType(writer, field, fieldName, fieldTypeCanonicalName);
             } else if (Utils.isRealmInteger(field)) {
-                emitRealmInteger(writer, field, fieldName, fieldTypeCanonicalName);
+                emitRealmInteger(writer, fieldName, fieldTypeCanonicalName);
             } else if (Utils.isRealmModel(field)) {
                 emitRealmModel(writer, field, fieldName, fieldTypeCanonicalName);
             } else if (Utils.isRealmList(field)) {
@@ -378,17 +381,25 @@ public class RealmProxyClassGenerator {
         writer.endMethod();
     }
 
-    private void emitRealmInteger(JavaWriter writer, VariableElement field, String fieldName, String fieldTypeCanonicalName) throws IOException {
-        writer.emitAnnotation("Override");
-        writer.beginMethod(fieldTypeCanonicalName, metadata.getInternalGetter(fieldName), EnumSet.of(Modifier.PUBLIC))
-                .emitStatement("return new ManagedRealmInteger(0)")
-                .endMethod()
-                .emitEmptyLine();
+    //@formatter:off
+    private void emitRealmInteger(JavaWriter writer, String fieldBaseName, String fieldTypeCanonicalName) throws IOException {
+        String fieldName = fieldBaseName + "RealmInteger";
+        writer.emitAnnotation("Override")
+            .beginMethod(fieldTypeCanonicalName, metadata.getInternalGetter(fieldBaseName), EnumSet.of(Modifier.PUBLIC))
+                .emitStatement("proxyState.getRealm$realm().checkIfValid()")
+                .beginControlFlow("if (%s == null)", fieldName)
+                .emitStatement("final BaseRealm realm = proxyState.getRealm$realm()", fieldName)
+                .emitStatement("%s = new ManagedRealmInteger(new ManagedRealmInteger.Environment() { @Override public boolean isInTransaction() { return realm.isInTransaction(); } })", fieldName)
+                .endControlFlow()
+                .emitStatement("return %s", fieldName)
+            .endMethod()
+            .emitEmptyLine();
 
         writer.emitAnnotation("Override");
         writer.beginMethod("void", metadata.getInternalSetter(fieldName), EnumSet.of(Modifier.PUBLIC), fieldTypeCanonicalName, "value")
                 .endMethod();
     }
+    //@formatter:on
 
     /**
      * Links

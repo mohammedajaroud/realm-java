@@ -26,14 +26,20 @@ import io.realm.RealmInteger;
  * in the superclass, to assure the reflexive contract.
  */
 public final class ManagedRealmInteger extends RealmInteger {
+    public interface Environment {
+        boolean isInTransaction();
+    }
+
+    private final Environment env;
+    private long value;
 
     /**
      * Creates a new {@code ManagedRealmInteger}, with the specified initial value.
      *
-     * @param value initial value.
+     * @param env The the environment.
      */
-    public ManagedRealmInteger(long value) {
-
+    public ManagedRealmInteger(Environment env) {
+        this.env = env;
     }
 
     /**
@@ -45,7 +51,8 @@ public final class ManagedRealmInteger extends RealmInteger {
      */
     @Override
     public void set(long newValue) {
-
+        assertInTransaction();
+        this.value = newValue;
     }
 
     /**
@@ -56,7 +63,8 @@ public final class ManagedRealmInteger extends RealmInteger {
      */
     @Override
     public void increment(long inc) {
-
+        assertInTransaction();
+        value += inc;
     }
 
     /**
@@ -67,7 +75,8 @@ public final class ManagedRealmInteger extends RealmInteger {
      */
     @Override
     public void decrement(long dec) {
-
+        assertInTransaction();
+        value -= dec;
     }
 
     /**
@@ -75,7 +84,7 @@ public final class ManagedRealmInteger extends RealmInteger {
      */
     @Override
     public boolean isManaged() {
-        return true;
+        return env.isInTransaction();
     }
 
     /**
@@ -83,7 +92,7 @@ public final class ManagedRealmInteger extends RealmInteger {
      */
     @Override
     public boolean isValid() {
-        return false;
+        return env.isInTransaction();
     }
 
     /**
@@ -91,30 +100,12 @@ public final class ManagedRealmInteger extends RealmInteger {
      */
     @Override
     public long longValue() {
-        return 0L;
+        return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int intValue() {
-        return (int) 0L;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double doubleValue() {
-        return (double) 0L;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public float floatValue() {
-        return (float) 0L;
+    private void assertInTransaction() {
+        if (!env.isInTransaction()) {
+            throw new IllegalStateException("A RealmInteger can only be mutated within a transaction");
+        }
     }
 }

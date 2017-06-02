@@ -88,6 +88,7 @@ public class AllTypesRealmProxy extends some.test.AllTypes
 
     private AllTypesColumnInfo columnInfo;
     private ProxyState<some.test.AllTypes> proxyState;
+    private RealmInteger columnCounterRealmInteger;
     private RealmList<some.test.AllTypes> columnRealmListRealmList;
     private RealmResults<some.test.AllTypes> parentObjectsBacklinks;
     private static final List<String> FIELD_NAMES;
@@ -288,7 +289,12 @@ public class AllTypesRealmProxy extends some.test.AllTypes
 
     @Override
     public RealmInteger realmGet$columnCounter() {
-        return new ManagedRealmInteger(0);
+        proxyState.getRealm$realm().checkIfValid();
+        if (columnCounterRealmInteger == null) {
+            final BaseRealm realm = proxyState.getRealm$realm();
+            columnCounterRealmInteger = new ManagedRealmInteger(new ManagedRealmInteger.Environment() { @Override public boolean isInTransaction() { return realm.isInTransaction(); } });
+        }
+        return columnCounterRealmInteger;
     }
 
     @Override

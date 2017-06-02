@@ -94,28 +94,4 @@ public final class UnmanagedRealmInteger extends RealmInteger {
     public long longValue() {
         return value;
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int intValue() {
-        return (int) value;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double doubleValue() {
-        return (double) value;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public float floatValue() {
-        return (float) value;
-    }
 }

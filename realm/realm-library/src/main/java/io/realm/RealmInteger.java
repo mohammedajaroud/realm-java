@@ -81,6 +81,30 @@ public abstract class RealmInteger extends Number implements Comparable<RealmInt
      * {@inheritDoc}
      */
     @Override
+    public final int intValue() {
+        return (int) longValue();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final double doubleValue() {
+        return (double) longValue();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final float floatValue() {
+        return (float) longValue();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String toString() {
         return String.valueOf(longValue());
     }
