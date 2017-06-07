@@ -17,25 +17,129 @@ package io.realm;
 
 import io.realm.annotations.Beta;
 import io.realm.internal.ManagableObject;
-import io.realm.internal.datatypes.realminteger.UnmanagedRealmInteger;
+import io.realm.internal.Row;
 
 
 /**
  * A RealmInteger is a mutable, {@link java.lang.Long}-like numeric quantity.
  * RealmInteger implementations are not thread safe.  Like all Realm objects,
  * managed RealmIntegers may not be moved across threads.  Unmanaged RealmObject
- * may be moved across threads by require safe publication.
- *
+ * may be moved across threads but require safe publication.
+ * <p>
  * It wraps an internal CRDT counter:
- * @see <a href="https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type"></a>
  *
+ * @see <a href="https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type"></a>
+ * <p>
  * TODO: More complete docs, including examples of use.
  */
 @Beta
 public abstract class RealmInteger extends Number implements Comparable<RealmInteger>, ManagableObject {
 
     /**
-     * Creates a new {@code RealmInteger}, with the specified initial value.
+     * Unmanaged Implementation.
+     */
+    private static final class UnmanagedRealmInteger extends RealmInteger {
+        private long value;
+
+        UnmanagedRealmInteger(long value) {
+            this.value = value;
+        }
+
+        @Override
+        public void set(long newValue) {
+            value = newValue;
+        }
+
+        @Override
+        public void increment(long inc) {
+            value += inc;
+        }
+
+        @Override
+        public void decrement(long dec) {
+            value -= dec;
+        }
+
+        @Override
+        public boolean isManaged() {
+            return false;
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public long longValue() {
+            return value;
+        }
+    }
+
+
+    /**
+     * Managed Implementation.
+     */
+    static final class ManagedRealmInteger extends RealmInteger {
+        private final ProxyState<?> proxyState;
+        private final BaseRealm realm;
+        private final Row row;
+        private final long columnIndex;
+
+        ManagedRealmInteger(ProxyState<? extends RealmObject> proxyState, long columnIndex) {
+            this.proxyState = proxyState;
+            this.realm = proxyState.getRealm$realm();
+            this.row = proxyState.getRow$realm();
+            this.columnIndex = columnIndex;
+        }
+
+        @Override
+        public boolean isManaged() {
+            return true;
+        }
+
+        @Override
+        public boolean isValid() {
+            return !realm.isClosed() && row.isAttached();
+        }
+
+        @Override
+        public long longValue() {
+            realm.checkIfValid();
+            // Need to check isValid?
+            return row.getLong(columnIndex);
+        }
+
+        @Override
+        public void set(long value) {
+            if (proxyState.isUnderConstruction()) {
+                if (!proxyState.getAcceptDefaultValue$realm()) {  // Wat?
+                    return;
+                }
+
+                row.getTable().setLong(columnIndex, row.getIndex(), value, true);
+                return;
+            }
+
+            realm.checkIfValidAndInTransaction();
+            row.setLong(columnIndex, value);
+        }
+
+        @Override
+        public void increment(long inc) {
+            realm.checkIfValidAndInTransaction();
+            set(longValue() + inc);  // FIXME: wire up to native increment method
+        }
+
+        @Override
+        public void decrement(long dec) {
+            realm.checkIfValidAndInTransaction();
+            set(longValue() - dec);  // FIXME: wire up to native increment method
+        }
+    }
+
+    /**
+     * Creates a new, unmanaged {@code RealmInteger} with the specified initial value.
      *
      * @param value initial value.
      */
@@ -44,13 +148,32 @@ public abstract class RealmInteger extends Number implements Comparable<RealmInt
     }
 
     /**
-     * Creates a new realm integer, with the specified initial value.
+     * Creates a new, unmmanaged {@code RealmInteger} with the specified initial value.
      *
      * @param value initial value: parsed by {@code Long.parseLong}.
      */
     public static RealmInteger valueOf(String value) {
         return new UnmanagedRealmInteger(Long.parseLong(value));
     }
+
+    /**
+     * Creates a new, managed {@code RealmInteger}.
+     *
+     * @param proxyState Proxy state object.  Contains refs to Realm and Row.
+     * @param columnIndex The index of the column that contains the RealmInteger.
+     * @return a managed RealmInteger.
+     */
+    static RealmInteger managedRealmInteger(ProxyState<? extends RealmObject> proxyState, long columnIndex) {
+        return new ManagedRealmInteger(proxyState, columnIndex);
+    }
+
+    /**
+     * Seal the class.
+     * In fact, this allows subclasses inside the package "realm.io".
+     * Because it eliminates the synthetic constructor, though, we can live with that.
+     * Don't make subclasses.
+     */
+    RealmInteger() {}
 
     /**
      * Sets the {@code RealmInteger} value.

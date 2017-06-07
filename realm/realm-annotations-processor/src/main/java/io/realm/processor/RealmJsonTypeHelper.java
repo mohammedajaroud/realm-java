@@ -46,93 +46,9 @@ public class RealmJsonTypeHelper {
         JAVA_TO_JSON_TYPES.put("java.lang.Double", new SimpleTypeConverter("double", "Double"));
         JAVA_TO_JSON_TYPES.put("java.lang.Boolean", new SimpleTypeConverter("boolean", "Boolean"));
         JAVA_TO_JSON_TYPES.put("java.lang.String", new SimpleTypeConverter("String", "String"));
-        JAVA_TO_JSON_TYPES.put("java.util.Date", new JsonToRealmFieldTypeConverter() {
-            // @formatter:off
-            @Override
-            public void emitTypeConversion(String interfaceName, String setter, String fieldName, String fieldType,
-                JavaWriter writer) throws IOException {
-                writer
-                    .beginControlFlow("if (json.has(\"%s\"))", fieldName)
-                        .beginControlFlow("if (json.isNull(\"%s\"))", fieldName)
-                            .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
-                        .nextControlFlow("else")
-                            .emitStatement("Object timestamp = json.get(\"%s\")", fieldName)
-                            .beginControlFlow("if (timestamp instanceof String)")
-                               .emitStatement("((%s) obj).%s(JsonUtils.stringToDate((String) timestamp))",
-                                       interfaceName, setter)
-                            .nextControlFlow("else")
-                                .emitStatement("((%s) obj).%s(new Date(json.getLong(\"%s\")))", interfaceName, setter,
-                                        fieldName)
-                            .endControlFlow()
-                        .endControlFlow()
-                    .endControlFlow();
-            }
-            //@formatter:on
-
-            // @formatter:off
-            @Override
-            public void emitStreamTypeConversion(String interfaceName, String setter, String fieldName,
-                String fieldType, JavaWriter writer, boolean isPrimaryKey) throws IOException {
-                writer
-                    .beginControlFlow("if (reader.peek() == JsonToken.NULL)")
-                        .emitStatement("reader.skipValue()")
-                        .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
-                    .nextControlFlow("else if (reader.peek() == JsonToken.NUMBER)")
-                        .emitStatement("long timestamp = reader.nextLong()", fieldName)
-                        .beginControlFlow("if (timestamp > -1)")
-                            .emitStatement("((%s) obj).%s(new Date(timestamp))", interfaceName, setter)
-                        .endControlFlow()
-                    .nextControlFlow("else")
-                        .emitStatement("((%s) obj).%s(JsonUtils.stringToDate(reader.nextString()))", interfaceName,
-                                setter)
-                    .endControlFlow();
-            }
-            //@formatter:on
-
-            @Override
-            public void emitGetObjectWithPrimaryKeyValue(String qualifiedRealmObjectClass,
-                    String qualifiedRealmObjectProxyClass, String fieldName, JavaWriter writer) throws IOException {
-                throw new IllegalArgumentException("'Date' is not allowed as a primary key value.");
-            }
-        });
-        JAVA_TO_JSON_TYPES.put("byte[]", new JsonToRealmFieldTypeConverter() {
-            // @formatter:off
-            @Override
-            public void emitTypeConversion(String interfaceName, String setter, String fieldName, String fieldType,
-                JavaWriter writer) throws IOException {
-                writer
-                    .beginControlFlow("if (json.has(\"%s\"))", fieldName)
-                        .beginControlFlow("if (json.isNull(\"%s\"))", fieldName)
-                            .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
-                        .nextControlFlow("else")
-                            .emitStatement("((%s) obj).%s(JsonUtils.stringToBytes(json.getString(\"%s\")))",
-                                    interfaceName, setter, fieldName)
-                        .endControlFlow()
-                    .endControlFlow();
-            }
-            //@formatter:on
-
-            // @formatter:off
-            @Override
-            public void emitStreamTypeConversion(String interfaceName, String setter, String fieldName,
-                String fieldType, JavaWriter writer, boolean isPrimaryKey) throws IOException {
-                writer
-                    .beginControlFlow("if (reader.peek() == JsonToken.NULL)")
-                        .emitStatement("reader.skipValue()")
-                        .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
-                    .nextControlFlow("else")
-                        .emitStatement("((%s) obj).%s(JsonUtils.stringToBytes(reader.nextString()))", interfaceName,
-                                setter)
-                    .endControlFlow();
-            }
-            //@formatter:on
-
-            @Override
-            public void emitGetObjectWithPrimaryKeyValue(String qualifiedRealmObjectClass,
-                    String qualifiedRealmObjectProxyClass, String fieldName, JavaWriter writer) throws IOException {
-                throw new IllegalArgumentException("'byte[]' is not allowed as a primary key value.");
-            }
-        });
+        JAVA_TO_JSON_TYPES.put("java.util.Date", new DateTypeConverter());
+        JAVA_TO_JSON_TYPES.put("byte[]", new ByteArrayTypeConverter());
+        JAVA_TO_JSON_TYPES.put("io.realm.RealmInteger", new RealmIntegerTypeConverter());
     }
 
     public static void emitCreateObjectWithPrimaryKeyValue(String qualifiedRealmObjectClass,
@@ -342,6 +258,126 @@ public class RealmJsonTypeHelper {
         }
     }
     //@formatter:on
+
+    private static class DateTypeConverter implements JsonToRealmFieldTypeConverter {
+
+        // @formatter:off
+        @Override
+        public void emitTypeConversion(String interfaceName, String setter, String fieldName, String fieldType,
+                JavaWriter writer) throws IOException {
+            writer
+                    .beginControlFlow("if (json.has(\"%s\"))", fieldName)
+                    .beginControlFlow("if (json.isNull(\"%s\"))", fieldName)
+                    .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
+                    .nextControlFlow("else")
+                    .emitStatement("Object timestamp = json.get(\"%s\")", fieldName)
+                    .beginControlFlow("if (timestamp instanceof String)")
+                    .emitStatement("((%s) obj).%s(JsonUtils.stringToDate((String) timestamp))",
+                            interfaceName, setter)
+                    .nextControlFlow("else")
+                    .emitStatement("((%s) obj).%s(new Date(json.getLong(\"%s\")))", interfaceName, setter,
+                            fieldName)
+                    .endControlFlow()
+                    .endControlFlow()
+                    .endControlFlow();
+        }
+        //@formatter:on
+
+        // @formatter:off
+        @Override
+        public void emitStreamTypeConversion(String interfaceName, String setter, String fieldName,
+                String fieldType, JavaWriter writer, boolean isPrimaryKey) throws IOException {
+            writer
+                    .beginControlFlow("if (reader.peek() == JsonToken.NULL)")
+                    .emitStatement("reader.skipValue()")
+                    .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
+                    .nextControlFlow("else if (reader.peek() == JsonToken.NUMBER)")
+                    .emitStatement("long timestamp = reader.nextLong()", fieldName)
+                    .beginControlFlow("if (timestamp > -1)")
+                    .emitStatement("((%s) obj).%s(new Date(timestamp))", interfaceName, setter)
+                    .endControlFlow()
+                    .nextControlFlow("else")
+                    .emitStatement("((%s) obj).%s(JsonUtils.stringToDate(reader.nextString()))", interfaceName,
+                            setter)
+                    .endControlFlow();
+        }
+
+        @Override
+        public void emitGetObjectWithPrimaryKeyValue(String qualifiedRealmObjectClass,
+                String qualifiedRealmObjectProxyClass, String fieldName, JavaWriter writer) throws IOException {
+            throw new IllegalArgumentException("'Date' is not allowed as a primary key value.");
+        }
+    }
+
+    private static class ByteArrayTypeConverter implements JsonToRealmFieldTypeConverter {
+        // @formatter:off
+        @Override
+        public void emitTypeConversion(String interfaceName, String setter, String fieldName, String fieldType,
+                JavaWriter writer) throws IOException {
+            writer
+                    .beginControlFlow("if (json.has(\"%s\"))", fieldName)
+                    .beginControlFlow("if (json.isNull(\"%s\"))", fieldName)
+                    .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
+                    .nextControlFlow("else")
+                    .emitStatement("((%s) obj).%s(JsonUtils.stringToBytes(json.getString(\"%s\")))",
+                            interfaceName, setter, fieldName)
+                    .endControlFlow()
+                    .endControlFlow();
+        }
+        //@formatter:on
+
+        // @formatter:off
+        @Override
+        public void emitStreamTypeConversion(String interfaceName, String setter, String fieldName,
+                String fieldType, JavaWriter writer, boolean isPrimaryKey) throws IOException {
+            writer
+                    .beginControlFlow("if (reader.peek() == JsonToken.NULL)")
+                    .emitStatement("reader.skipValue()")
+                    .emitStatement("((%s) obj).%s(null)", interfaceName, setter)
+                    .nextControlFlow("else")
+                    .emitStatement("((%s) obj).%s(JsonUtils.stringToBytes(reader.nextString()))", interfaceName,
+                            setter)
+                    .endControlFlow();
+        }
+        //@formatter:on
+
+        @Override
+        public void emitGetObjectWithPrimaryKeyValue(String qualifiedRealmObjectClass,
+                String qualifiedRealmObjectProxyClass, String fieldName, JavaWriter writer) throws IOException {
+            throw new IllegalArgumentException("'byte[]' is not allowed as a primary key value.");
+        }
+    }
+
+    private static class RealmIntegerTypeConverter implements JsonToRealmFieldTypeConverter {
+
+        @Override
+        public void emitTypeConversion(String interfaceName, String getter, String fieldName, String fieldType, JavaWriter writer) throws IOException {
+            writer
+                    .beginControlFlow("if (json.has(\"%s\"))", fieldName)
+                    .beginControlFlow("if (json.isNull(\"%s\"))", fieldName)
+                    .emitStatement(Constants.STATEMENT_EXCEPTION_ILLEGAL_NULL_VALUE, fieldName)
+                    .nextControlFlow("else")
+                    .emitStatement("((%s) obj).%s().set(json.getLong(\"%s\"))", interfaceName, getter, fieldName)
+                    .endControlFlow()
+                    .endControlFlow();
+        }
+
+        @Override
+        public void emitStreamTypeConversion(String interfaceName, String getter, String fieldName, String fieldType, JavaWriter writer, boolean isPrimaryKey) throws IOException {
+            writer
+                    .beginControlFlow("if (reader.peek() == JsonToken.NULL)")
+                    .emitStatement("reader.skipValue()")
+                    .emitStatement(Constants.STATEMENT_EXCEPTION_ILLEGAL_NULL_VALUE, fieldName)
+                    .nextControlFlow("else")
+                    .emitStatement("((%s) obj).%s().set(reader.nextLong(\"%s\"))", interfaceName, getter, fieldName)
+                    .endControlFlow();
+        }
+
+        @Override
+        public void emitGetObjectWithPrimaryKeyValue(String qualifiedRealmObjectClass, String qualifiedRealmObjectProxyClass, String fieldName, JavaWriter writer) throws IOException {
+            throw new IllegalArgumentException("'RealmInteger' is not allowed as a primary key value.");
+       }
+    }
 
     private interface JsonToRealmFieldTypeConverter {
         void emitTypeConversion(String interfaceName, String setter, String fieldName, String fieldType,

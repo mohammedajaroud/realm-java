@@ -19,7 +19,6 @@ import android.support.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,6 +31,11 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+
+
+// FIXME!!! Need JSON tests.
+
+// FIXME!!! Need tests for isManaged, isValid
 
 @RunWith(AndroidJUnit4.class)
 public class RealmIntegerTests {
@@ -275,28 +279,27 @@ public class RealmIntegerTests {
             managedRI.set(1);
             fail("Setting a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
+            checkTransactionException(e);
         }
 
         try {
             managedRI.increment(1);
             fail("Incrementing a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
+            checkTransactionException(e);
         }
 
         try {
             managedRI.decrement(1);
             fail("Decrementing a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
+            checkTransactionException(e);
         }
     }
 
     /**
      * Assure that changes to a RealmInteger acquired from a managed object are reflected in the object.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void isLive() {
         realm.beginTransaction();
@@ -318,7 +321,6 @@ public class RealmIntegerTests {
     /**
      * Assure that changes to a RealmInteger acquired from a managed object are reflected in the object.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void copyToisLive() {
         Counters obj = new Counters();
@@ -345,7 +347,6 @@ public class RealmIntegerTests {
     /**
      * Assure that a RealmInteger acquired from an unmanaged object is not affected by changes in the DB.
      */
-    @Ignore("Not yet implemented")
     @Test
     public void copyFromIsNotLive() {
         realm.beginTransaction();
@@ -369,6 +370,7 @@ public class RealmIntegerTests {
 
     /**
      * Test the semantic definition.
+     *
      * @see <a href="https://github.com/realm/realm-java/issues/4266"/>
      */
     @Test
@@ -391,6 +393,7 @@ public class RealmIntegerTests {
 
     /**
      * Test the semantic definition.
+     *
      * @see <a href="https://github.com/realm/realm-java/issues/4266"/>
      */
     @Test
@@ -407,19 +410,12 @@ public class RealmIntegerTests {
             obj1.columnRealmInteger.increment(1);
             fail("Incrementing a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
+            checkTransactionException(e);
         }
 
         realm.beginTransaction();
         obj1.columnRealmInteger.increment(1);
         realm.commitTransaction();
-
-        try {
-            obj2.columnRealmInteger = obj1.columnRealmInteger;
-            fail("Assigning a managed RealmInteger into an unmanaged object should fail");
-        } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("Cannot assign a managed RealmInteger to an unmanaged object"));
-        }
 
         obj2.columnRealmInteger.set(obj1.columnRealmInteger.longValue());
 
@@ -432,7 +428,7 @@ public class RealmIntegerTests {
             obj1.columnRealmInteger.set(obj2.columnRealmInteger.longValue());
             fail("Setting a managed RealmInteger outside a transaction should fail");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains("can only be mutated within a transaction"));
+            checkTransactionException(e);
         }
 
         realm.beginTransaction();
@@ -442,10 +438,22 @@ public class RealmIntegerTests {
         assertEquals(2L, obj2.columnRealmInteger.longValue());
         assertTrue(obj1.columnRealmInteger.equals(obj2.columnRealmInteger));
         assertFalse(obj1.columnRealmInteger == obj2.columnRealmInteger);
+
+        obj2.columnRealmInteger = obj1.columnRealmInteger;
+
+        assertFalse(obj2.isManaged());
+        assertTrue(obj2.columnRealmInteger.isManaged());
+        try {
+            obj2.columnRealmInteger.set(1);
+            fail("Setting a managed RealmInteger outside a transaction should fail");
+        } catch (IllegalStateException e) {
+            checkTransactionException(e);
+        }
     }
 
     /**
      * Test the semantic definition.
+     *
      * @see <a href="https://github.com/realm/realm-java/issues/4266"/>
      */
     @Test
@@ -473,5 +481,7 @@ public class RealmIntegerTests {
         assertFalse(obj1.columnRealmInteger == obj2.columnRealmInteger);
     }
 
-    // FIXME!!! Need JSON tests.
+    private void checkTransactionException(IllegalStateException e) {
+        assertTrue(e.getMessage().contains("only be done from inside a transaction"));
+    }
 }
