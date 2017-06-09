@@ -27,6 +27,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+@SuppressWarnings("all")
 public class BooleansRealmProxy extends some.test.Booleans
     implements RealmObjectProxy, BooleansRealmProxyInterface {
 
@@ -184,15 +185,15 @@ public class BooleansRealmProxy extends some.test.Booleans
     }
 
     public static RealmObjectSchema createRealmObjectSchema(RealmSchema realmSchema) {
-        if (!realmSchema.contains("Booleans")) {
-            RealmObjectSchema realmObjectSchema = realmSchema.create("Booleans");
-            realmObjectSchema.add("done", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
-            realmObjectSchema.add("isReady", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
-            realmObjectSchema.add("mCompleted", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
-            realmObjectSchema.add("anotherBoolean", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
-            return realmObjectSchema;
+        if (realmSchema.contains("Booleans")) {
+            return realmSchema.get("Booleans");
         }
-        return realmSchema.get("Booleans");
+        RealmObjectSchema realmObjectSchema = realmSchema.create("Booleans");
+        realmObjectSchema.add("done", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
+        realmObjectSchema.add("isReady", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
+        realmObjectSchema.add("mCompleted", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
+        realmObjectSchema.add("anotherBoolean", RealmFieldType.BOOLEAN, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
+        return realmObjectSchema;
     }
 
     public static BooleansColumnInfo validateTable(SharedRealm sharedRealm, boolean allowExtraColumns) {

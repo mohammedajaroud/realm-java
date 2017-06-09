@@ -41,32 +41,32 @@ public class RealmProxyClassGenerator {
 
     private static final List<String> IMPORTS;
     static {
-        List<String> l = new ArrayList<String>();
-        l.add("android.annotation.TargetApi");
-        l.add("android.os.Build");
-        l.add("android.util.JsonReader");
-        l.add("android.util.JsonToken");
-        l.add("io.realm.exceptions.RealmMigrationNeededException");
-        l.add("io.realm.internal.ColumnInfo");
-        l.add("io.realm.internal.LinkView");
-        l.add("io.realm.internal.OsObject");
-        l.add("io.realm.internal.RealmObjectProxy");
-        l.add("io.realm.internal.Row");
-        l.add("io.realm.internal.SharedRealm");
-        l.add("io.realm.internal.Table");
-        l.add("io.realm.internal.android.JsonUtils");
-        l.add("io.realm.log.RealmLog");
-        l.add("java.io.IOException");
-        l.add("java.util.ArrayList");
-        l.add("java.util.Collections");
-        l.add("java.util.List");
-        l.add("java.util.Iterator");
-        l.add("java.util.Date");
-        l.add("java.util.Map");
-        l.add("java.util.HashMap");
-        l.add("org.json.JSONObject");
-        l.add("org.json.JSONException");
-        l.add("org.json.JSONArray");
+        List<String> l = Arrays.asList(
+            "android.annotation.TargetApi",
+            "android.os.Build",
+            "android.util.JsonReader",
+            "android.util.JsonToken",
+            "io.realm.exceptions.RealmMigrationNeededException",
+            "io.realm.internal.ColumnInfo",
+            "io.realm.internal.LinkView",
+            "io.realm.internal.OsObject",
+            "io.realm.internal.RealmObjectProxy",
+            "io.realm.internal.Row",
+            "io.realm.internal.SharedRealm",
+            "io.realm.internal.Table",
+            "io.realm.internal.android.JsonUtils",
+            "io.realm.log.RealmLog",
+            "java.io.IOException",
+            "java.util.ArrayList",
+            "java.util.Collections",
+            "java.util.List",
+            "java.util.Iterator",
+            "java.util.Date",
+            "java.util.Map",
+            "java.util.HashMap",
+            "org.json.JSONObject",
+            "org.json.JSONException",
+            "org.json.JSONArray");
         IMPORTS = Collections.unmodifiableList(l);
     }
 
@@ -105,7 +105,8 @@ public class RealmProxyClassGenerator {
                 .emitEmptyLine();
 
         // Begin the class definition
-        writer.beginType(
+        writer.emitAnnotation("SuppressWarnings(\"all\")")
+                .beginType(
                 qualifiedGeneratedClassName, // full qualified name of the item to generate
                 "class",                     // the type of the item
                 EnumSet.of(Modifier.PUBLIC), // modifiers to apply
@@ -461,10 +462,10 @@ public class RealmProxyClassGenerator {
                 .beginControlFlow("if (!(RealmObject.isManaged(value) && RealmObject.isValid(value)))")
                 .emitStatement("throw new IllegalArgumentException(\"'value' is not a valid managed object.\")")
                 .endControlFlow()
-                .beginControlFlow("if (((RealmObjectProxy)value).realmGet$proxyState().getRealm$realm() != proxyState.getRealm$realm())")
+                .beginControlFlow("if (((RealmObjectProxy) value).realmGet$proxyState().getRealm$realm() != proxyState.getRealm$realm())")
                 .emitStatement("throw new IllegalArgumentException(\"'value' belongs to a different Realm.\")")
                 .endControlFlow()
-                .emitStatement("proxyState.getRow$realm().setLink(%s, ((RealmObjectProxy)value).realmGet$proxyState().getRow$realm().getIndex())", fieldIndexVariableReference(field))
+                .emitStatement("proxyState.getRow$realm().setLink(%s, ((RealmObjectProxy) value).realmGet$proxyState().getRow$realm().getIndex())", fieldIndexVariableReference(field))
                 .endMethod();
     }
     //@formatter:on
@@ -534,10 +535,10 @@ public class RealmProxyClassGenerator {
                 .beginControlFlow("if (!(RealmObject.isManaged(linkedObject) && RealmObject.isValid(linkedObject)))")
                 .emitStatement("throw new IllegalArgumentException(\"Each element of 'value' must be a valid managed object.\")")
                 .endControlFlow()
-                .beginControlFlow("if (((RealmObjectProxy)linkedObject).realmGet$proxyState().getRealm$realm() != proxyState.getRealm$realm())")
+                .beginControlFlow("if (((RealmObjectProxy) linkedObject).realmGet$proxyState().getRealm$realm() != proxyState.getRealm$realm())")
                 .emitStatement("throw new IllegalArgumentException(\"Each element of 'value' must belong to the same Realm.\")")
                 .endControlFlow()
-                .emitStatement("links.add(((RealmObjectProxy)linkedObject).realmGet$proxyState().getRow$realm().getIndex())")
+                .emitStatement("links.add(((RealmObjectProxy) linkedObject).realmGet$proxyState().getRow$realm().getIndex())")
                 .endControlFlow()
                 .endMethod();
     }
@@ -628,7 +629,10 @@ public class RealmProxyClassGenerator {
                 EnumSet.of(Modifier.PUBLIC, Modifier.STATIC), // Modifiers
                 "RealmSchema", "realmSchema"); // Argument type & argument name
 
-        writer.beginControlFlow("if (!realmSchema.contains(\"" + this.simpleClassName + "\"))");
+        writer.beginControlFlow("if (realmSchema.contains(\"%s\"))", this.simpleClassName)
+            .emitStatement("return realmSchema.get(\"%s\")", this.simpleClassName)
+            .endControlFlow();
+
         writer.emitStatement("RealmObjectSchema realmObjectSchema = realmSchema.create(\"%s\")", this.simpleClassName);
 
         // For each field generate corresponding table index constant
@@ -672,8 +676,6 @@ public class RealmProxyClassGenerator {
             }
         }
         writer.emitStatement("return realmObjectSchema");
-        writer.endControlFlow();
-        writer.emitStatement("return realmSchema.get(\"" + this.simpleClassName + "\")");
         writer.endMethod()
                 .emitEmptyLine();
     }
@@ -1675,8 +1677,10 @@ public class RealmProxyClassGenerator {
                 .emitStatement("cachedObject.minDepth = currentDepth")
                 .endControlFlow();
 
-        writer.emitStatement("%1$s unmanagedCopy = (%1$s) unmanagedObject", interfaceName);
-        writer.emitStatement("%1$s realmSource = (%1$s) realmObject", interfaceName);
+        // may cause an unused variable warning if the object contains only null lists
+        writer.emitStatement("%1$s unmanagedCopy = (%1$s) unmanagedObject", interfaceName)
+            .emitStatement("%1$s realmSource = (%1$s) realmObject", interfaceName);
+        
         for (VariableElement field : metadata.getFields()) {
             String fieldName = field.getSimpleName().toString();
             String setter = metadata.getInternalSetter(fieldName);

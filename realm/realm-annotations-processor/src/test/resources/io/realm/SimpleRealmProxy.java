@@ -27,6 +27,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+@SuppressWarnings("all")
 public class SimpleRealmProxy extends some.test.Simple
     implements RealmObjectProxy, SimpleRealmProxyInterface {
 
@@ -140,13 +141,13 @@ public class SimpleRealmProxy extends some.test.Simple
     }
 
     public static RealmObjectSchema createRealmObjectSchema(RealmSchema realmSchema) {
-        if (!realmSchema.contains("Simple")) {
-            RealmObjectSchema realmObjectSchema = realmSchema.create("Simple");
-            realmObjectSchema.add("name", RealmFieldType.STRING, !Property.PRIMARY_KEY, !Property.INDEXED, !Property.REQUIRED);
-            realmObjectSchema.add("age", RealmFieldType.INTEGER, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
-            return realmObjectSchema;
+        if (realmSchema.contains("Simple")) {
+            return realmSchema.get("Simple");
         }
-        return realmSchema.get("Simple");
+        RealmObjectSchema realmObjectSchema = realmSchema.create("Simple");
+        realmObjectSchema.add("name", RealmFieldType.STRING, !Property.PRIMARY_KEY, !Property.INDEXED, !Property.REQUIRED);
+        realmObjectSchema.add("age", RealmFieldType.INTEGER, !Property.PRIMARY_KEY, !Property.INDEXED, Property.REQUIRED);
+        return realmObjectSchema;
     }
 
     public static SimpleColumnInfo validateTable(SharedRealm sharedRealm, boolean allowExtraColumns) {
@@ -264,7 +265,7 @@ public class SimpleRealmProxy extends some.test.Simple
         if (object instanceof RealmObjectProxy && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm().threadId != realm.threadId) {
             throw new IllegalArgumentException("Objects which belong to Realm instances in other threads cannot be copied into this Realm instance.");
         }
-        if (object instanceof RealmObjectProxy && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
+        if (object instanceof RealmObjectProxy && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
             return object;
         }
         final BaseRealm.RealmObjectContext objectContext = BaseRealm.objectContext.get();
@@ -295,19 +296,19 @@ public class SimpleRealmProxy extends some.test.Simple
     }
 
     public static long insert(Realm realm, some.test.Simple object, Map<RealmModel,Long> cache) {
-        if (object instanceof RealmObjectProxy && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
-            return ((RealmObjectProxy)object).realmGet$proxyState().getRow$realm().getIndex();
+        if (object instanceof RealmObjectProxy && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
+            return ((RealmObjectProxy) object).realmGet$proxyState().getRow$realm().getIndex();
         }
         Table table = realm.getTable(some.test.Simple.class);
         long tableNativePtr = table.getNativePtr();
         SimpleColumnInfo columnInfo = (SimpleColumnInfo) realm.schema.getColumnInfo(some.test.Simple.class);
         long rowIndex = OsObject.createRow(realm.sharedRealm, table);
         cache.put(object, rowIndex);
-        String realmGet$name = ((SimpleRealmProxyInterface)object).realmGet$name();
+        String realmGet$name = ((SimpleRealmProxyInterface) object).realmGet$name();
         if (realmGet$name != null) {
             Table.nativeSetString(tableNativePtr, columnInfo.nameIndex, rowIndex, realmGet$name, false);
         }
-        Table.nativeSetLong(tableNativePtr, columnInfo.ageIndex, rowIndex, ((SimpleRealmProxyInterface)object).realmGet$age(), false);
+        Table.nativeSetLong(tableNativePtr, columnInfo.ageIndex, rowIndex, ((SimpleRealmProxyInterface) object).realmGet$age(), false);
         return rowIndex;
     }
 
@@ -336,21 +337,21 @@ public class SimpleRealmProxy extends some.test.Simple
     }
 
     public static long insertOrUpdate(Realm realm, some.test.Simple object, Map<RealmModel,Long> cache) {
-        if (object instanceof RealmObjectProxy && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
-            return ((RealmObjectProxy)object).realmGet$proxyState().getRow$realm().getIndex();
+        if (object instanceof RealmObjectProxy && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
+            return ((RealmObjectProxy) object).realmGet$proxyState().getRow$realm().getIndex();
         }
         Table table = realm.getTable(some.test.Simple.class);
         long tableNativePtr = table.getNativePtr();
         SimpleColumnInfo columnInfo = (SimpleColumnInfo) realm.schema.getColumnInfo(some.test.Simple.class);
         long rowIndex = OsObject.createRow(realm.sharedRealm, table);
         cache.put(object, rowIndex);
-        String realmGet$name = ((SimpleRealmProxyInterface)object).realmGet$name();
+        String realmGet$name = ((SimpleRealmProxyInterface) object).realmGet$name();
         if (realmGet$name != null) {
             Table.nativeSetString(tableNativePtr, columnInfo.nameIndex, rowIndex, realmGet$name, false);
         } else {
             Table.nativeSetNull(tableNativePtr, columnInfo.nameIndex, rowIndex, false);
         }
-        Table.nativeSetLong(tableNativePtr, columnInfo.ageIndex, rowIndex, ((SimpleRealmProxyInterface)object).realmGet$age(), false);
+        Table.nativeSetLong(tableNativePtr, columnInfo.ageIndex, rowIndex, ((SimpleRealmProxyInterface) object).realmGet$age(), false);
         return rowIndex;
     }
 
@@ -361,22 +362,22 @@ public class SimpleRealmProxy extends some.test.Simple
         some.test.Simple object = null;
         while (objects.hasNext()) {
             object = (some.test.Simple) objects.next();
-            if( cache.containsKey(object)) {
+            if (cache.containsKey(object)) {
                 continue;
             }
-            if (object instanceof RealmObjectProxy && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy)object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
-                cache.put(object, ((RealmObjectProxy)object).realmGet$proxyState().getRow$realm().getIndex());
+            if (object instanceof RealmObjectProxy && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm() != null && ((RealmObjectProxy) object).realmGet$proxyState().getRealm$realm().getPath().equals(realm.getPath())) {
+                cache.put(object, ((RealmObjectProxy) object).realmGet$proxyState().getRow$realm().getIndex());
                 continue;
             }
             long rowIndex = OsObject.createRow(realm.sharedRealm, table);
             cache.put(object, rowIndex);
-            String realmGet$name = ((SimpleRealmProxyInterface)object).realmGet$name();
+            String realmGet$name = ((SimpleRealmProxyInterface) object).realmGet$name();
             if (realmGet$name != null) {
                 Table.nativeSetString(tableNativePtr, columnInfo.nameIndex, rowIndex, realmGet$name, false);
             } else {
                 Table.nativeSetNull(tableNativePtr, columnInfo.nameIndex, rowIndex, false);
             }
-            Table.nativeSetLong(tableNativePtr, columnInfo.ageIndex, rowIndex, ((SimpleRealmProxyInterface)object).realmGet$age(), false);
+            Table.nativeSetLong(tableNativePtr, columnInfo.ageIndex, rowIndex, ((SimpleRealmProxyInterface) object).realmGet$age(), false);
         }
     }
 
@@ -394,7 +395,6 @@ public class SimpleRealmProxy extends some.test.Simple
             if (currentDepth >= cachedObject.minDepth) {
                 return (some.test.Simple) cachedObject.object;
             }
-
             unmanagedObject = (some.test.Simple) cachedObject.object;
             cachedObject.minDepth = currentDepth;
         }
